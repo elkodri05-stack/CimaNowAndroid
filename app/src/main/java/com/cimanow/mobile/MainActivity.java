@@ -6,9 +6,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
-import android.view.KeyEvent;
-import android.view.View;
-import android.widget.Toast;
+import android.net.Uri;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -25,7 +23,20 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
+                return handleUrl(request.getUrl());
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return handleUrl(Uri.parse(url));
+            }
+
+            private boolean handleUrl(Uri uri) {
+                String scheme = uri.getScheme();
+                // Let normal website pages load inside the app. Ignore intent:// and
+                // other unsupported schemes so WebView does not show ERR_UNKNOWN_URL_SCHEME.
+                return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
             }
         });
         webView.setWebChromeClient(new WebChromeClient());
