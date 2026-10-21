@@ -40,13 +40,41 @@ public class MainActivity extends Activity {
                 String scheme = uri.getScheme();
                 return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Target only the site's popup-warning card. Do not hide broad ancestors
+                // that may contain the video player or server-selection controls.
+                String script = "(function(){"
+                    + "function hidePopupWarning(){"
+                    + "var all=document.querySelectorAll('body *');"
+                    + "for(var i=0;i<all.length;i++){"
+                    + "var e=all[i]; if(!e||!e.innerText) continue;"
+                    + "var t=e.innerText.trim();"
+                    + "if(t.length>0 && t.length<700 && "
+                    + "(t.indexOf('يجب السماح بالنوافذ المنبثقة')!==-1 || "
+                    + "t.indexOf('لتتمكن من التحميل والمشاهدة')!==-1)){"
+                    + "var r=e.getBoundingClientRect();"
+                    + "if(r.width>250 && r.height>180){"
+                    + "e.style.setProperty('display','none','important');"
+                    + "e.style.setProperty('visibility','hidden','important');"
+                    + "}"
+                    + "}"
+                    + "}"
+                    + "}"
+                    + "hidePopupWarning();"
+                    + "new MutationObserver(hidePopupWarning).observe(document.documentElement,{childList:true,subtree:true});"
+                    + "})();";
+                view.evaluateJavascript(script, null);
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog,
                                           boolean isUserGesture, Message resultMsg) {
-                // Continue blocking new popup windows, but do not alter page content.
+                // Continue blocking new popup windows.
                 return false;
             }
         });
