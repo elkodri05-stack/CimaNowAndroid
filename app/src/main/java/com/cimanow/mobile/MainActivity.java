@@ -40,47 +40,13 @@ public class MainActivity extends Activity {
                 String scheme = uri.getScheme();
                 return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
             }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                String script = "(function(){"
-                    + "function hideWarning(){"
-                    + "var els=document.querySelectorAll('body *');"
-                    + "for(var i=0;i<els.length;i++){"
-                    + "var e=els[i]; if(!e||!e.innerText) continue;"
-                    + "var t=e.innerText;"
-                    + "if(t.length<1600 && (t.indexOf('يرجى إيقاف مانع الإعلانات')!==-1 || "
-                    + "t.indexOf('دعمك يساعدنا في تقديم المحتوى')!==-1 || "
-                    + "t.indexOf('يجب السماح بالنوافذ المنبثقة')!==-1 || "
-                    + "t.indexOf('لتتمكن من التحميل والمشاهدة')!==-1)){"
-                    + "var p=e;"
-                    + "for(var j=0;j<6 && p && p!==document.body;j++){"
-                    + "var s=window.getComputedStyle(p);"
-                    + "var r=p.getBoundingClientRect();"
-                    + "if((s.position==='fixed' || s.position==='absolute' || "
-                    + "p.getAttribute('role')==='dialog' || p.getAttribute('aria-modal')==='true' || "
-                    + "(r.width>240 && r.height>120 && t.length<1000))){"
-                    + "p.style.setProperty('display','none','important');"
-                    + "p.style.setProperty('visibility','hidden','important');"
-                    + "break;"
-                    + "}"
-                    + "p=p.parentElement;"
-                    + "}"
-                    + "}"
-                    + "}"
-                    + "}"
-                    + "hideWarning();"
-                    + "new MutationObserver(hideWarning).observe(document.documentElement,{childList:true,subtree:true});"
-                    + "})();";
-                view.evaluateJavascript(script, null);
-            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog,
                                           boolean isUserGesture, Message resultMsg) {
+                // Continue blocking new popup windows, but do not alter page content.
                 return false;
             }
         });
