@@ -21,9 +21,6 @@ public class MainActivity extends Activity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setMediaPlaybackRequiresUserGesture(true);
-
-        // Keep popup windows separate so they can be blocked instead of hijacking
-        // the current page. Do not allow JavaScript to open popups automatically.
         webView.getSettings().setSupportMultipleWindows(true);
         webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
 
@@ -43,13 +40,46 @@ public class MainActivity extends Activity {
                 String scheme = uri.getScheme();
                 return !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme));
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // Hide only the site's anti-pop-up/anti-adblock warning overlay.
+                // Popup blocking remains enabled; video and ordinary page content are untouched.
+                String script = "(function(){"
+                    + "function hideWarning(){"
+                    + "var els=document.querySelectorAll('body *');"
+                    + "for(var i=0;i<els.length;i++){"
+                    + "var e=els[i]; if(!e||!e.innerText) continue;"
+                    + "var t=e.innerText;"
+                    + "if(t.indexOf('يرجى إيقاف مانع الإعلانات')!==-1 || "
+                    + "t.indexOf('دعمك يساعدنا في تقديم المحتوى')!==-1){"
+                    + "var p=e;"
+                    + "for(var j=0;j<5 && p && p!==document.body;j++){"
+                    + "var s=window.getComputedStyle(p);"
+                    + "if(s.position==='fixed' || s.position==='absolute' || "
+                    + "p.getAttribute('role')==='dialog' || p.getAttribute('aria-modal')==='true'){"
+                    + "p.style.setProperty('display','none','important');"
+                    + "p.style.setProperty('visibility','hidden','important');"
+                    + "break;"
+                    + "}"
+                    + "p=p.parentElement;"
+                    + "}"
+                    + "}"
+                    + "}"
+                    + "}"
+                    + "hideWarning();"
+                    + "new MutationObserver(hideWarning).observe(document.documentElement,{childList:true,subtree:true});"
+                    + "})();";
+                view.evaluateJavascript(script, null);
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog,
                                           boolean isUserGesture, Message resultMsg) {
-                // Block new WebView windows, which are commonly used for pop-up ads.
+                // Block new WebView windows, commonly used for pop-up ads.
                 return false;
             }
         });
